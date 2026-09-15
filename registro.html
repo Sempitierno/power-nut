@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - PowertNut</title>
+    <link rel="stylesheet" href="./assets/formularios.css">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <!-- Asume que tienes un icono para el logo, aquí usamos un placeholder textual -->
+            <span class="logo-icon">🥜</span> 
+            <span class="logo-text">PowertNut</span>
+        </div>
+        
+        <nav class="nav">
+            <ul>
+                <li><a href="index.html" class="active">Inicio</a></li>
+                <li><a href="index.html">Productos</a></li>
+                <li><a href="carrito.html">Carrito</a></li>
+            </ul>
+        </nav>
+
+        <div class="header-actions">
+            <a href="carrito.html" class="cart-btn"><span class="cart-icon">🛒</span> Cart (0)</a>
+            <a href="login.html" class="login-btn">Iniciar sesión</a>
+            <a href="registro.html" class="register-btn">Registrarse</a>
+        </div>
+    </header>
+
+    <main class="minimal-container">
+        <div class="form-box">
+            <h2>Crear cuenta</h2>
+            <form id="form-registro">
+                <label>Nombre completo</label>
+                <input type="text" id="reg-nombre" placeholder="Solo letras" required>
+                
+                <label>Correo y Confirmación</label>
+                <div class="input-group">
+                    <input type="email" id="reg-correo" placeholder="Correo" required>
+                    <input type="email" id="reg-correo-conf" placeholder="Confirmar correo" required>
+                </div>
+                <span class="error-msg" id="err-reg-correo"></span>
+
+                <label>Contraseña y Confirmación</label>
+                <div class="input-group">
+                    <input type="password" id="reg-pass" placeholder="Mín. 8 caracteres, 1 número, 1 símbolo" required>
+                    <input type="password" id="reg-pass-conf" placeholder="Confirmar contraseña" required>
+                </div>
+                <span class="error-msg" id="err-reg-pass"></span>
+
+                <label>Región y Comuna</label>
+                <div class="input-group">
+                    <select id="reg-region" required>
+                        <option value="">Seleccione Región...</option>
+                        <option value="RM">Metropolitana</option>
+                        <option value="V">Valparaíso</option>
+                    </select>
+                    <select id="reg-comuna" required disabled>
+                        <option value="">Comuna...</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary full-width" style="margin-top: 15px;">Registrarse</button>
+            </form>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
