@@ -324,3 +324,10 @@ body {
         margin-top: 40px;
     }
 }
+
+/* --- Ajustes para que Bootstrap no cambie el diseño de la EP1 --- */
+h1, h2, h3, h4 { font-weight: 700; }
+.product-title { font-size: 1.1rem; }
+.footer h4 { font-size: 1rem; }
+.footer ul, .nav ul { padding-left: 0; margin-bottom: 0; }
+.btn-secondary:disabled { background-color: transparent; opacity: 1; }

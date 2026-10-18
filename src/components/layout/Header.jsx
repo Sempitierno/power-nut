@@ -1,37 +1,36 @@
-import { Link, NavLink, useNavigate } from "react-router-dom"
-import {useAuth} from '../../context/AuthContext.jsx'
-import {useCart} from '../../context/CartContext.jsx'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { useCart } from '../../context/CartContext.jsx'
 
-function Header(){
+function Header() {
+  const { usuario, logout } = useAuth()
+  const { totalItems } = useCart()
+  const navigate = useNavigate()
 
-    const {usuario, logout } = useAuth()
-    const { totalItems } = useCart()
-    const navigate =  useNavigate()
+  const cerrarSesion = () => {
+    logout()
+    navigate('/')
+  }
 
-    const cerrarSesion = () =>{
-        logout()
-        navigate('/')
-    }
+  return (
+    <header className="header">
+      <div className="logo">
+        <span className="logo-icon">🥜</span>
+        <span className="logo-text">PowertNut</span>
+      </div>
 
-    return (
-        <header className="header">
-        <div className="logo">
-            <span className="logo-icon">🥜</span> 
-            <span className="logo-text">PowertNut</span>
-        </div>
-        
-        <nav className="nav">
-            <ul>
-                <li><Link to="/" className="active">Inicio</Link></li>
-                <li><Link to="/#catalogo">Productos</Link></li>
-                <li><NavLink to="/carrito">Carrito</NavLink></li>
-                {usuario?.rol === 'admin' && <li>< NavLink to="/admin/productos">Admin</NavLink></li>}
-            </ul>
-        </nav>
+      <nav className="nav">
+        <ul>
+          <li><NavLink to="/" end>Inicio</NavLink></li>
+          <li><a href="/#catalogo">Productos</a></li>
+          <li><NavLink to="/carrito">Carrito</NavLink></li>
+          {usuario?.rol === 'admin' && <li><NavLink to="/admin/productos">Admin</NavLink></li>}
+        </ul>
+      </nav>
 
-        <div className="header-actions">
-            <Link to="/carrito" className="cart-btn"><span className="cart-icon">🛒</span> Cart ({totalItems})</Link>
-            {usuario ? (
+      <div className="header-actions">
+        <Link to="/carrito" className="cart-btn"><span className="cart-icon">🛒</span> Cart ({totalItems})</Link>
+        {usuario ? (
           <>
             <span>Hola, {usuario.nombre}</span>
             <button className="login-btn" onClick={cerrarSesion}>Cerrar sesión</button>
@@ -44,9 +43,7 @@ function Header(){
         )}
       </div>
     </header>
-        
-
-    )
+  )
 }
 
 export default Header
