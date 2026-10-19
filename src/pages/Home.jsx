@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom'
+import { useCart } from '../context/CartContext.jsx'
 
 const IMG_MANI = 'https://mejorconsalud.as.com/wp-content/uploads/2020/09/frasco-mantequilla-cacahuete.jpg'
 const IMG_CACAO = 'https://blog.pizcadesabor.com/wp-content/uploads/2013/12/Crema-5.jpg'
 
+
 function Home() {
+  const { agregar } = useCart()
   const enviarContacto = (e) => {
     e.preventDefault()
     alert('Mensaje enviado con éxito')
@@ -68,7 +71,7 @@ function Home() {
               <span className="product-category">CREMA DE MANÍ</span>
               <h3 className="product-title">Crema de Maní Natural — 500 g</h3>
               <p className="product-price">$6.990</p>
-              <button className="btn btn-primary add-to-cart">Añadir al carrito</button>
+              <button className="btn btn-primary add-to-cart"onClick={() => agregar({ id: 'mani-500', nombre: 'Crema de Maní Natural — 500 g', precio: 6990, img: IMG_MANI })}>Añadir al carrito</button>
             </div>
           </div>
 
@@ -81,7 +84,7 @@ function Home() {
               <span className="product-category">CREMA DE MANÍ</span>
               <h3 className="product-title">Crema de Maní Natural — 1 kg</h3>
               <p className="product-price">$11.990</p>
-              <button className="btn btn-primary add-to-cart">Añadir al carrito</button>
+              <button className="btn btn-primary add-to-cart"onClick={() => agregar({ id: 'mani-1000', nombre: 'Crema de Maní Natural — 1000 g', precio: 11990, img: IMG_MANI })}>Añadir al carrito</button>
             </div>
           </div>
 

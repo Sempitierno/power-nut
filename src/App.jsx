@@ -6,7 +6,9 @@ import Carrito from './pages/Carrito.jsx'
 import Login from './pages/Login.jsx'
 import Registro from './pages/Registro.jsx'
 import AdminProductos from './pages/admin/AdminProductos.jsx'
+import Pago from './pages/Pago.jsx'
 
+<Route path="/pago" element={<Pago />} />
 function App() {
   return (
     <Routes>
