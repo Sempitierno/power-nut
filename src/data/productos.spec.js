@@ -47,4 +47,9 @@ describe('productos.js', () => {
     expect(Object.keys(validarProducto({ nombre: '', precio: 0, categoria: ' ' })).length).toBe(3)
     expect(validarProducto({ nombre: 'A', precio: '10', categoria: 'B' })).toEqual({})
   })
+  
+  it('validarProducto rechaza una imagen que no sea URL http(s)', () => {
+  const e = validarProducto({ nombre: 'A', precio: 10, categoria: 'B', img: 'foto.png' })
+  expect(e.img).toBeDefined()
+  })
 })

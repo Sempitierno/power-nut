@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Table, Form, Button } from 'react-bootstrap'
 import { obtenerProductos, crearProducto, actualizarProducto, eliminarProducto, validarProducto } from '../../data/productos.js'
 
-const VACIO = { nombre: '', precio: '', categoria: '' }
+const VACIO = { nombre: '', precio: '', categoria: '', img: ''  }
 const clp = (n) => Number(n).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })
 
 function AdminProductos() {
@@ -30,7 +30,7 @@ function AdminProductos() {
 
   const editar = (p) => {
     setEditandoId(p.id)
-    setDatos({ nombre: p.nombre, precio: String(p.precio), categoria: p.categoria })
+    setDatos({ nombre: p.nombre, precio: String(p.precio), categoria: p.categoria, img: p.img || ''  })
     setErrores({})
   }
 
@@ -60,6 +60,11 @@ function AdminProductos() {
           <Form.Label>Categoría</Form.Label>
           <Form.Control name="categoria" value={datos.categoria} onChange={cambiar} isInvalid={!!errores.categoria} />
           <Form.Control.Feedback type="invalid">{errores.categoria}</Form.Control.Feedback>
+        </Form.Group>
+        <Form.Group className="mb-3" controlId="img">
+        <Form.Label>URL de la imagen (opcional)</Form.Label>
+        <Form.Control name="img" value={datos.img} onChange={cambiar} isInvalid={!!errores.img} placeholder="https://..." />
+        <Form.Control.Feedback type="invalid">{errores.img}</Form.Control.Feedback>
         </Form.Group>
         <Button type="submit" variant="primary">{editandoId === null ? 'Crear' : 'Guardar cambios'}</Button>
         {editandoId !== null && <Button variant="secondary" className="ms-2" onClick={limpiar}>Cancelar</Button>}

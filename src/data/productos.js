@@ -22,12 +22,20 @@ export const obtenerProductos = () => {
   guardar(semilla)
   return semilla
 }
+// new URL() valida la URL real; trim() elimina espacios invisibles del copiar/pegar
+const esUrlHttp = (valor) => {
+  try {
+    const u = new URL(valor.trim())
+    return u.protocol === 'http:' || u.protocol === 'https:'
+  } catch { return false }
+}
 
-export const validarProducto = ({ nombre, precio, categoria }) => {
+export const validarProducto = ({ nombre, precio, categoria, img }) => {  // ✅ img recibido
   const errores = {}
   if (!nombre?.trim()) errores.nombre = 'El nombre es obligatorio'
   if (!(Number(precio) > 0)) errores.precio = 'El precio debe ser mayor a 0'
   if (!categoria?.trim()) errores.categoria = 'La categoría es obligatoria'
+  if (img?.trim() && !esUrlHttp(img)) errores.img = 'Ingresa una URL válida que comience con http:// o https://'
   return errores
 }
 

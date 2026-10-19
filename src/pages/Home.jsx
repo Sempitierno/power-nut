@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
+import { useState } from 'react'
+import ProductCard from '../components/ProductCard.jsx'
+import { obtenerProductos } from '../data/productos.js'
 
 const IMG_MANI = 'https://mejorconsalud.as.com/wp-content/uploads/2020/09/frasco-mantequilla-cacahuete.jpg'
 const IMG_CACAO = 'https://blog.pizcadesabor.com/wp-content/uploads/2013/12/Crema-5.jpg'
@@ -7,6 +10,7 @@ const IMG_CACAO = 'https://blog.pizcadesabor.com/wp-content/uploads/2013/12/Crem
 
 function Home() {
   const { agregar } = useCart()
+  const [productos] = useState(obtenerProductos)
   const enviarContacto = (e) => {
     e.preventDefault()
     alert('Mensaje enviado con éxito')
@@ -62,32 +66,10 @@ function Home() {
         </div>
 
         <div className="products-grid">
-          <div className="product-card">
-            <div className="product-image">
-              <span className="product-weight">500 g</span>
-              <img src={IMG_MANI} alt="Crema de Maní Natural 500g" />
-            </div>
-            <div className="product-info">
-              <span className="product-category">CREMA DE MANÍ</span>
-              <h3 className="product-title">Crema de Maní Natural — 500 g</h3>
-              <p className="product-price">$6.990</p>
-              <button className="btn btn-primary add-to-cart"onClick={() => agregar({ id: 'mani-500', nombre: 'Crema de Maní Natural — 500 g', precio: 6990, img: IMG_MANI })}>Añadir al carrito</button>
-            </div>
-          </div>
-
-          <div className="product-card">
-            <div className="product-image">
-              <span className="product-weight">1 kg</span>
-              <img src={IMG_MANI} alt="Crema de Maní Natural 1kg" />
-            </div>
-            <div className="product-info">
-              <span className="product-category">CREMA DE MANÍ</span>
-              <h3 className="product-title">Crema de Maní Natural — 1 kg</h3>
-              <p className="product-price">$11.990</p>
-              <button className="btn btn-primary add-to-cart"onClick={() => agregar({ id: 'mani-1000', nombre: 'Crema de Maní Natural — 1000 g', precio: 11990, img: IMG_MANI })}>Añadir al carrito</button>
-            </div>
-          </div>
-
+          {productos.map((p) => (
+            <ProductCard key={p.id} producto={p} onAgregar={agregar} />
+            ))}
+          
           <div className="product-card" style={{ opacity: 0.85 }}>
             <div className="product-image">
               <span className="product-weight" style={{ background: '#3E2723', color: 'white' }}>Novedad</span>

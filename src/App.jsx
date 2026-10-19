@@ -8,7 +8,6 @@ import Registro from './pages/Registro.jsx'
 import AdminProductos from './pages/admin/AdminProductos.jsx'
 import Pago from './pages/Pago.jsx'
 
-<Route path="/pago" element={<Pago />} />
 function App() {
   return (
     <Routes>
