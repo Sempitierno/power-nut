@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { Alert } from 'react-bootstrap'
 
 const COMUNAS = {
   RM: ['Santiago', 'Providencia', 'Maipú', 'Puente Alto'],
@@ -27,6 +28,7 @@ function Registro() {
   const navigate = useNavigate()
   const [datos, setDatos] = useState(VACIO)
   const [errores, setErrores] = useState({})
+  const [exito, setExito] = useState(false)
 
   const cambiar = (e) => {
     const { id, value } = e.target
@@ -46,7 +48,9 @@ function Registro() {
       setErrores({ correo: 'Ese correo ya está registrado' })
       return
     }
-    alert('Registro exitoso')
+    setExito(true)
+    setDatos(VACIO)
+    setTimeout(() => navigate('/login'), 2000)
     navigate('/login')
   }
 
@@ -86,8 +90,11 @@ function Registro() {
             </select>
           </div>
           <span className="error-msg">{errores.region}</span>
-
-          <button type="submit" className="btn btn-primary full-width">Registrarse</button>
+          {exito && (
+            <Alert variant="success" className="mt-3" role="status">
+              ¡Usuario registrado con éxito! Redirigiendo al inicio de sesión…
+            </Alert>
+          )}<button type="submit" className="btn btn-primary full-width">Registrarse</button>
         </form>
       </div>
     </main>

@@ -90,7 +90,11 @@ function Home() {
         <div className="contact-container">
           <h2>¿Tienes alguna duda?</h2>
           <p>Escríbenos y te responderemos lo antes posible.</p>
-          <form className="contact-form" onSubmit={enviarContacto}>
+          {enviado && (
+            <Alert variant="success" dismissible onClose={() => setEnviado(false)} role="status">
+              Mensaje enviado con éxito
+            </Alert>
+          )}<form className="contact-form" onSubmit={enviarContacto}>
             <input type="text" placeholder="Tu nombre" required />
             <input type="email" placeholder="Tu correo electrónico" required />
             <textarea rows="4" placeholder="Tu mensaje..." required></textarea>
