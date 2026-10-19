@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
+import { useState } from 'react'
+import { Alert } from 'react-bootstrap'
 
 const IMG_MANI = 'https://mejorconsalud.as.com/wp-content/uploads/2020/09/frasco-mantequilla-cacahuete.jpg'
 const IMG_CACAO = 'https://blog.pizcadesabor.com/wp-content/uploads/2013/12/Crema-5.jpg'
@@ -7,10 +9,14 @@ const IMG_CACAO = 'https://blog.pizcadesabor.com/wp-content/uploads/2013/12/Crem
 
 function Home() {
   const { agregar } = useCart()
-  const enviarContacto = (e) => {
-    e.preventDefault()
-    alert('Mensaje enviado con éxito')
-  }
+ const [enviado, setEnviado] = useState(false)
+
+const enviarContacto = (e) => {
+  e.preventDefault()
+  setEnviado(true)
+  e.currentTarget.reset() // inputs no controlados: se limpian con reset()
+  setTimeout(() => setEnviado(false), 4000)
+}
 
   return (
     <main>
@@ -108,7 +114,11 @@ function Home() {
         <div className="contact-container">
           <h2>¿Tienes alguna duda?</h2>
           <p>Escríbenos y te responderemos lo antes posible.</p>
-          <form className="contact-form" onSubmit={enviarContacto}>
+          {enviado && (
+            <Alert variant="success" dismissible onClose={() => setEnviado(false)} role="status">
+              Mensaje enviado con éxito
+            </Alert>
+          )}<form className="contact-form" onSubmit={enviarContacto}>
             <input type="text" placeholder="Tu nombre" required />
             <input type="email" placeholder="Tu correo electrónico" required />
             <textarea rows="4" placeholder="Tu mensaje..." required></textarea>
