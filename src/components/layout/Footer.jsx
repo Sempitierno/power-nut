@@ -20,9 +20,9 @@ function Footer() {
         <div className="footer-social">
           <h4>Síguenos</h4>
           <div className="social-icons">
-            <a href="#">IG</a>
-            <a href="#">FB</a>
-            <a href="#">TK</a>
+            <a href="https://www.instagram.com/josa_b.m.m?cplk=enQzbGZkcm50Nmgy" target="_blank" rel="noopener noreferrer">JO</a>
+            <a href="https://www.instagram.com/eln4ch0_0?cplk=MTRvZWY5Zzl6NjVpNA==" target="_blank" rel="noopener noreferrer">NA</a>
+            <a href="https://www.instagram.com/sempitiern0/" target="_blank" rel="noopener noreferrer">TO</a>
           </div>
         </div>
       </div>
