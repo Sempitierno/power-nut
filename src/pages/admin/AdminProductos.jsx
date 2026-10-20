@@ -1,6 +1,7 @@
-// TEMPORAL: aquí va el CRUD de productos (Integrante 3)
+// CRUD de productos (solo admin): crear, listar, editar y eliminar
 import { useState } from 'react'
-import { Table, Form, Button } from 'react-bootstrap'
+import { Table, Form, Button, Modal } from 'react-bootstrap'
+import Notificacion from '../../components/Notificaciones.jsx'
 import { obtenerProductos, crearProducto, actualizarProducto, eliminarProducto, validarProducto } from '../../data/productos.js'
 
 const VACIO = { nombre: '', precio: '', categoria: '', img: ''  }
@@ -12,6 +13,8 @@ function AdminProductos() {
   const [datos, setDatos] = useState(VACIO)
   const [editandoId, setEditandoId] = useState(null)
   const [errores, setErrores] = useState({})
+  const [aEliminar, setAEliminar] = useState(null) // producto que espera confirmación
+  const [aviso, setAviso] = useState('')
 
   const refrescar = () => setProductos(obtenerProductos())
   const limpiar = () => { setDatos(VACIO); setEditandoId(null); setErrores({}) }
@@ -34,11 +37,13 @@ function AdminProductos() {
     setErrores({})
   }
 
-  const borrar = (p) => {
-    if (!window.confirm(`¿Eliminar "${p.nombre}"?`)) return
-    eliminarProducto(p.id)
-    if (p.id === editandoId) limpiar() // evita editar un producto que ya no existe
+  // Se llama al confirmar en el modal
+  const confirmarBorrado = () => {
+    eliminarProducto(aEliminar.id)
+    if (aEliminar.id === editandoId) limpiar() // evita editar un producto que ya no existe
     refrescar()
+    setAviso(`"${aEliminar.nombre}" fue eliminado`)
+    setAEliminar(null)
   }
 
   return (
@@ -78,12 +83,26 @@ function AdminProductos() {
               <td>{p.nombre}</td><td>{p.categoria}</td><td>{clp(p.precio)}</td>
               <td>
                 <Button size="sm" variant="outline-primary" onClick={() => editar(p)}>Editar</Button>{' '}
-                <Button size="sm" variant="outline-danger" onClick={() => borrar(p)}>Eliminar</Button>
+                <Button size="sm" variant="outline-danger" onClick={() => setAEliminar(p)}>Eliminar</Button>
               </td>
             </tr>
           ))}
         </tbody>
       </Table>
+
+      {/* Modal de confirmación (reemplaza window.confirm) */}
+      <Modal show={aEliminar !== null} onHide={() => setAEliminar(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Eliminar producto</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>¿Seguro que quieres eliminar <strong>{aEliminar?.nombre}</strong>? Esta acción no se puede deshacer.</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setAEliminar(null)}>Cancelar</Button>
+          <Button variant="danger" onClick={confirmarBorrado}>Sí, eliminar</Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Notificacion mensaje={aviso} onClose={() => setAviso('')} />
     </main>
   )
 }

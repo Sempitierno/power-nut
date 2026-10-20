@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { Alert } from 'react-bootstrap'
+import Notificacion from '../components/Notificaciones.jsx'
 
 const COMUNAS = {
   RM: ['Santiago', 'Providencia', 'Maipú', 'Puente Alto'],
@@ -50,8 +50,7 @@ function Registro() {
     }
     setExito(true)
     setDatos(VACIO)
-    setTimeout(() => navigate('/login'), 2000)
-    navigate('/login')
+    setTimeout(() => navigate('/login'), 2500)
   }
 
   return (
@@ -90,13 +89,13 @@ function Registro() {
             </select>
           </div>
           <span className="error-msg">{errores.region}</span>
-          {exito && (
-            <Alert variant="success" className="mt-3" role="status">
-              ¡Usuario registrado con éxito! Redirigiendo al inicio de sesión…
-            </Alert>
-          )}<button type="submit" className="btn btn-primary full-width">Registrarse</button>
+          <button type="submit" className="btn btn-primary full-width">Registrarse</button>
         </form>
       </div>
+      <Notificacion
+        mensaje={exito ? '¡Te has registrado con éxito! Te llevamos al inicio de sesión…' : ''}
+        onClose={() => setExito(false)}
+      />
     </main>
   )
 }

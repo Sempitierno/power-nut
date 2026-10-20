@@ -27,7 +27,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 20px 5%;
-    background-color: #fff;
+    background-color: #7c5315;
 }
 
 .logo, .nav ul, .header-actions {
@@ -331,3 +331,88 @@ h1, h2, h3, h4 { font-weight: 700; }
 .footer h4 { font-size: 1rem; }
 .footer ul, .nav ul { padding-left: 0; margin-bottom: 0; }
 .btn-secondary:disabled { background-color: transparent; opacity: 1; }
+
+/* ===== Mejoras visuales: header fijo y mejor contraste ===== */
+:root {
+    --accent-color: #A65A2E;   /* más oscuro que #D38C61 para que se lea sobre el fondo crema */
+    --btn-primary-hover: #4E2C20;
+}
+
+.header {
+    position: sticky;          /* se mantiene arriba al bajar */
+    top: 0;
+    z-index: 1000;
+    background-color: #fff;
+    box-shadow: 0 2px 12px rgba(62, 39, 35, 0.08);
+}
+
+.logo-text {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.nav a {
+    padding: 4px 0;
+    border-bottom: 2px solid transparent;
+}
+
+.nav a:hover,
+.nav a.active {
+    color: var(--btn-primary);
+    border-bottom-color: var(--accent-color);
+}
+
+.header-actions a,
+.header-actions button {
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.login-btn {
+    color: var(--btn-primary) !important;
+    border: 2px solid var(--btn-primary) !important;
+    border-radius: 30px;
+    padding: 8px 18px;
+}
+
+.login-btn:hover {
+    background-color: var(--btn-primary) !important;
+    color: #fff !important;
+}
+
+.register-btn {
+    background-color: var(--btn-primary) !important;
+    color: #fff !important;
+    border-radius: 30px;
+    padding: 10px 20px;
+}
+
+.register-btn:hover,
+.btn-primary:hover {
+    background-color: var(--btn-primary-hover) !important;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background-color: var(--btn-primary);
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 12px;
+    }
+    .nav ul,
+    .header-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}

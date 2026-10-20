@@ -3,6 +3,8 @@ import { useCart } from '../context/CartContext.jsx'
 import { useState } from 'react'
 import ProductCard from '../components/ProductCard.jsx'
 import { obtenerProductos } from '../data/productos.js'
+import { Alert } from 'react-bootstrap'
+import Notificacion from '../components/Notificaciones.jsx'
 
 const IMG_MANI = 'https://mejorconsalud.as.com/wp-content/uploads/2020/09/frasco-mantequilla-cacahuete.jpg'
 const IMG_CACAO = 'https://blog.pizcadesabor.com/wp-content/uploads/2013/12/Crema-5.jpg'
@@ -11,9 +13,19 @@ const IMG_CACAO = 'https://blog.pizcadesabor.com/wp-content/uploads/2013/12/Crem
 function Home() {
   const { agregar } = useCart()
   const [productos] = useState(obtenerProductos)
+  const [enviado, setEnviado] = useState(false)
+    const [aviso, setAviso] = useState('')
+
+  // Agrega al carrito y muestra la notificación
+  const agregarAlCarrito = (producto) => {
+    agregar(producto)
+    setAviso(`${producto.nombre} se agregó al carrito`)
+  }
+
   const enviarContacto = (e) => {
     e.preventDefault()
-    alert('Mensaje enviado con éxito')
+    setEnviado(true)
+    e.target.reset()
   }
 
   return (
@@ -57,7 +69,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Catálogo (el Integrante 2 lo cambia por ProductCard + localStorage) */}
+      {/* Catálogo */}
       <section id="catalogo" className="products-section">
         <div className="section-header">
           <span className="subtitle">CATÁLOGO</span>
@@ -67,9 +79,9 @@ function Home() {
 
         <div className="products-grid">
           {productos.map((p) => (
-            <ProductCard key={p.id} producto={p} onAgregar={agregar} />
-            ))}
-          
+            <ProductCard key={p.id} producto={p} onAgregar={agregarAlCarrito} />
+          ))}
+
           <div className="product-card" style={{ opacity: 0.85 }}>
             <div className="product-image">
               <span className="product-weight" style={{ background: '#3E2723', color: 'white' }}>Novedad</span>
@@ -94,7 +106,8 @@ function Home() {
             <Alert variant="success" dismissible onClose={() => setEnviado(false)} role="status">
               Mensaje enviado con éxito
             </Alert>
-          )}<form className="contact-form" onSubmit={enviarContacto}>
+          )}
+          <form className="contact-form" onSubmit={enviarContacto}>
             <input type="text" placeholder="Tu nombre" required />
             <input type="email" placeholder="Tu correo electrónico" required />
             <textarea rows="4" placeholder="Tu mensaje..." required></textarea>
@@ -102,6 +115,7 @@ function Home() {
           </form>
         </div>
       </section>
+      <Notificacion mensaje={aviso} onClose={() => setAviso('')} />
     </main>
   )
 }

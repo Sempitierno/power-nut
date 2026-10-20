@@ -7,8 +7,8 @@ module.exports = function(config) {
       'src/**/*.spec.jsx'
     ],
     preprocessors: {
-      'src/**/*.spec.js': ['webpack', 'coverage'],
-      'src/**/*.spec.jsx': ['webpack', 'coverage']
+      'src/**/*.spec.js': ['webpack'],
+      'src/**/*.spec.jsx': ['webpack']
     },
     webpack: {
       mode: 'development',
@@ -20,7 +20,8 @@ module.exports = function(config) {
             use: {
               loader: 'babel-loader',
               options: {
-                presets: ['@babel/preset-env', ['@babel/preset-react', { runtime: 'automatic' }]]
+                presets: ['@babel/preset-env', ['@babel/preset-react', { runtime: 'automatic' }]],
+                plugins: [['istanbul', { exclude: ['**/*.spec.js', '**/*.spec.jsx', 'src/test/**'] }]]
               }
             }
           }
@@ -32,8 +33,8 @@ module.exports = function(config) {
     },
     reporters: ['progress', 'coverage'],
     coverageReporter: {
-      type: 'html',
-      dir: 'coverage/'
+      dir: 'coverage/',
+      reporters: [{ type: 'html', subdir: '.' }, { type: 'text-summary' }]
     },
     port: 9876,
     colors: true,

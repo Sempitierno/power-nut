@@ -25,10 +25,21 @@ describe('AdminProductos', () => {
     expect(screen.getByText('Avena')).toBeTruthy()
   })
 
-  it('elimina solo si se confirma', () => {
-    spyOn(window, 'confirm').and.returnValue(true) // mock del diálogo nativo
+    it('elimina solo después de confirmar en el modal', () => {
     render(<AdminProductos />)
     fireEvent.click(screen.getAllByText('Eliminar')[0])
-    expect(screen.queryByText('Crema de Maní Natural — 500 g')).toBeNull()
+    // Se abre el modal y el producto todavía existe
+    expect(screen.getByText('Eliminar producto')).toBeTruthy()
+    expect(screen.getAllByText('Crema de Maní Natural — 500 g').length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByText('Sí, eliminar'))
+    expect(screen.queryByRole('cell', { name: 'Crema de Maní Natural — 500 g' })).toBeNull()
+    expect(screen.getByRole('status').textContent).toContain('fue eliminado')
+  })
+
+  it('no elimina si se cancela', () => {
+    render(<AdminProductos />)
+    fireEvent.click(screen.getAllByText('Eliminar')[0])
+    fireEvent.click(screen.getByText('Cancelar'))
+    expect(screen.getByRole('cell', { name: 'Crema de Maní Natural — 500 g' })).toBeTruthy()
   })
 })
