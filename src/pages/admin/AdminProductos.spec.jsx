@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import AdminProductos from './AdminProductos.jsx'
+import { AuthProvider } from '../../context/AuthContext.jsx'
 
 const PRODUCTOS_MOCK = [
   { id: 1, nombre: 'Crema de Maní Natural — 500 g', precio: 6990, categoria: 'Crema de maní', stock: 20, img: '' },
