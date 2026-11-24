@@ -47,8 +47,8 @@ describe('Login', () => {
     escribir('Contraseña', 'Admin123!')
     fireEvent.click(screen.getByText('Entrar'))
     expect(await screen.findByText('Panel admin')).toBeTruthy()
-    // Se envió POST /auth/login con las credenciales
-    const [url, opciones] = window.fetch.calls.mostRecent().args
+    // La primera llamada fue POST /auth/login con las credenciales
+    const [url, opciones] = window.fetch.calls.argsFor(0)
     expect(url).toContain('/auth/login')
     expect(JSON.parse(opciones.body)).toEqual({ correo: 'admin@powernut.cl', password: 'Admin123!' })
     expect(JSON.parse(localStorage.getItem('tokens'))).toEqual({ token: 't1', refreshToken: 'r1' })

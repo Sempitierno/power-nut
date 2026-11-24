@@ -12,16 +12,11 @@ function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        {/* Públicas */}
         <Route path="/" element={<Home />} />
         <Route path="/carrito" element={<Carrito />} />
         <Route path="/login" element={<Login />} />
         <Route path="/registro" element={<Registro />} />
-
-        {/* Solo usuarios logueados (cualquier rol) */}
         <Route path="/pago" element={<RutaProtegida><Pago /></RutaProtegida>} />
-
-        {/* Solo ADMIN */}
         <Route path="/admin/productos" element={<RutaProtegida rol="admin"><AdminProductos /></RutaProtegida>} />
       </Route>
     </Routes>

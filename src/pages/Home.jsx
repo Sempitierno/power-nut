@@ -1,25 +1,86 @@
-import { Link } from 'react-router-dom'
+﻿import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ProductCard from '../components/ProductCard.jsx'
-import { obtenerProductos } from '../data/productos.js'
-import { Alert } from 'react-bootstrap'
+import { obtenerProductos, obtenerProductoPorId } from '../services/productosService.js'
+import { Alert, Modal, Button } from 'react-bootstrap'
 import Notificacion from '../components/Notificaciones.jsx'
 
 const IMG_MANI = 'https://mejorconsalud.as.com/wp-content/uploads/2020/09/frasco-mantequilla-cacahuete.jpg'
 const IMG_CACAO = 'https://blog.pizcadesabor.com/wp-content/uploads/2013/12/Crema-5.jpg'
-
+const clp = (n) => Number(n || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })
 
 function Home() {
   const { agregar } = useCart()
-  const [productos] = useState(obtenerProductos)
+  const [productos, setProductos] = useState([])
+  const [cargando, setCargando] = useState(true)
+  const [errorCatalogo, setErrorCatalogo] = useState('')
   const [enviado, setEnviado] = useState(false)
-    const [aviso, setAviso] = useState('')
+  const [aviso, setAviso] = useState('')
 
-  // Agrega al carrito y muestra la notificación
-  const agregarAlCarrito = (producto) => {
-    agregar(producto)
-    setAviso(`${producto.nombre} se agregó al carrito`)
+  // Estado del modal de detalle (GET /products/{id})
+  const [modalAbierto, setModalAbierto] = useState(false)
+  const [cargandoDetalle, setCargandoDetalle] = useState(false)
+  const [errorDetalle, setErrorDetalle] = useState('')
+  const [detalle, setDetalle] = useState(null)
+
+  useEffect(() => {
+    let activo = true
+    async function cargarCatalogo() {
+      setCargando(true)
+      setErrorCatalogo('')
+      try {
+        const data = await obtenerProductos()
+        if (activo) {
+          setProductos(Array.isArray(data) ? data : [])
+        }
+      } catch (err) {
+        if (activo) {
+          setErrorCatalogo(err.message || 'No se pudieron cargar los productos')
+        }
+      } finally {
+        if (activo) {
+          setCargando(false)
+        }
+      }
+    }
+    cargarCatalogo()
+    return () => {
+      activo = false
+    }
+  }, [])
+
+  const abrirDetalle = async (id) => {
+    setModalAbierto(true)
+    setCargandoDetalle(true)
+    setErrorDetalle('')
+    setDetalle(null)
+    try {
+      const data = await obtenerProductoPorId(id)
+      setDetalle(data)
+    } catch (err) {
+      setErrorDetalle(err.message || 'No se pudo cargar el detalle del producto')
+    } finally {
+      setCargandoDetalle(false)
+    }
+  }
+
+  const cerrarDetalle = () => {
+    setModalAbierto(false)
+    setDetalle(null)
+    setErrorDetalle('')
+  }
+
+  // Agrega al carrito (con sesión va al backend, que valida el stock) y muestra la notificación
+  const [errorCarrito, setErrorCarrito] = useState('')
+  const agregarAlCarrito = async (producto) => {
+    try {
+      await agregar(producto)
+      setErrorCarrito('')
+      setAviso(`${producto.nombre} se agregó al carrito`)
+    } catch (err) {
+      setErrorCarrito(err.message) // ej: "Stock insuficiente para ..."
+    }
   }
 
   const enviarContacto = (e) => {
@@ -77,24 +138,44 @@ function Home() {
           <p>Cremas de maní en distintos formatos y mermeladas artesanales elaboradas con ingredientes de la más alta calidad.</p>
         </div>
 
-        <div className="products-grid">
-          {productos.map((p) => (
-            <ProductCard key={p.id} producto={p} onAgregar={agregarAlCarrito} />
-          ))}
+        {cargando && <p style={{ textAlign: 'center' }}>Cargando catálogo de productos...</p>}
 
-          <div className="product-card" style={{ opacity: 0.85 }}>
-            <div className="product-image">
-              <span className="product-weight" style={{ background: '#3E2723', color: 'white' }}>Novedad</span>
-              <img src={IMG_CACAO} alt="Producto próximamente" style={{ filter: 'grayscale(40%)' }} />
-            </div>
-            <div className="product-info">
-              <span className="product-category">PRÓXIMAMENTE</span>
-              <h3 className="product-title">Crema de Maní con Cacao</h3>
-              <p className="product-price" style={{ color: '#888', fontSize: '1.1rem' }}>Coming Soon</p>
-              <button className="btn btn-secondary add-to-cart" disabled style={{ cursor: 'not-allowed', borderColor: '#ccc', color: '#888' }}>No disponible</button>
+        {errorCarrito && (
+          <Alert variant="warning" dismissible onClose={() => setErrorCarrito('')}>
+            {errorCarrito}
+          </Alert>
+        )}
+        {errorCatalogo && (
+          <Alert variant="danger" role="alert">
+            Error al cargar el catálogo: {errorCatalogo}
+          </Alert>
+        )}
+
+        {!cargando && !errorCatalogo && (
+          <div className="products-grid">
+            {productos.map((p) => (
+              <ProductCard
+                key={p.id}
+                producto={p}
+                onAgregar={agregarAlCarrito}
+                onVerDetalle={abrirDetalle}
+              />
+            ))}
+
+            <div className="product-card" style={{ opacity: 0.85 }}>
+              <div className="product-image">
+                <span className="product-weight" style={{ background: '#3E2723', color: 'white' }}>Novedad</span>
+                <img src={IMG_CACAO} alt="Producto próximamente" style={{ filter: 'grayscale(40%)' }} />
+              </div>
+              <div className="product-info">
+                <span className="product-category">PRÓXIMAMENTE</span>
+                <h3 className="product-title">Crema de Maní con Cacao</h3>
+                <p className="product-price" style={{ color: '#888', fontSize: '1.1rem' }}>Coming Soon</p>
+                <button className="btn btn-secondary add-to-cart" disabled style={{ cursor: 'not-allowed', borderColor: '#ccc', color: '#888' }}>No disponible</button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* Contacto */}
@@ -115,6 +196,46 @@ function Home() {
           </form>
         </div>
       </section>
+
+      {/* Modal de detalle del producto */}
+      <Modal show={modalAbierto} onHide={cerrarDetalle} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>{detalle?.nombre || 'Detalle del producto'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {cargandoDetalle && <p>Cargando detalle...</p>}
+          {errorDetalle && <Alert variant="danger">{errorDetalle}</Alert>}
+          {!cargandoDetalle && !errorDetalle && detalle && (
+            <div>
+              <img
+                src={detalle.img || IMG_MANI}
+                alt={detalle.nombre}
+                style={{ width: '100%', maxHeight: '240px', objectFit: 'cover', borderRadius: '8px', marginBottom: '12px' }}
+              />
+              <p className="mb-1"><strong>Categoría:</strong> {detalle.categoria}</p>
+              <p className="mb-1"><strong>Precio:</strong> {clp(detalle.precio)}</p>
+              <p className="mb-1"><strong>Stock disponible:</strong> {detalle.stock ?? 0} unidades</p>
+              <p className="mb-0 text-muted"><small>Código de producto: #{detalle.id}</small></p>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={cerrarDetalle}>Cerrar</Button>
+          {detalle && (
+            <Button
+              variant="primary"
+              disabled={(detalle.stock ?? 0) <= 0}
+              onClick={() => {
+                agregarAlCarrito({ ...detalle, img: detalle.img || IMG_MANI })
+                cerrarDetalle()
+              }}
+            >
+              {(detalle.stock ?? 0) <= 0 ? 'Sin stock' : 'Añadir al carrito'}
+            </Button>
+          )}
+        </Modal.Footer>
+      </Modal>
+
       <Notificacion mensaje={aviso} onClose={() => setAviso('')} />
     </main>
   )

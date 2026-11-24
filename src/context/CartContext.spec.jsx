@@ -71,3 +71,92 @@ describe('CartContext', () => {
     expect(screen.getByTestId('total-items').textContent).toBe('5')
   })
 })
+
+// ---- Carrito con sesión: vive en el microservicio de pedidos ----
+import { act } from '@testing-library/react'
+import { AuthProvider } from './AuthContext.jsx'
+import { respuesta, esperarPromesas } from '../test/mockFetch.js'
+
+const CARRITO_SERVIDOR = {
+  usuarioId: 7,
+  items: [{ id: 50, productoId: 1, nombre: 'Crema de Maní', precio: 6990, img: '', cantidad: 2 }],
+  total: 13980,
+  totalItems: 2,
+}
+
+// Responde según la URL, como lo haría el gateway
+function backendSimulado(rutas) {
+  return spyOn(window, 'fetch').and.callFake((url, opciones) => {
+    const clave = `${opciones.method} ${url.replace('http://localhost:8080', '')}`
+    const r = rutas[clave]
+    return r ? r() : respuesta(404, { error: `sin mock para ${clave}` })
+  })
+}
+
+const renderConSesion = () =>
+  render(
+    <AuthProvider>
+      <CartProvider>
+        <BancoDePruebas />
+      </CartProvider>
+    </AuthProvider>,
+  )
+
+describe('CartContext con sesión (backend de pedidos)', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    localStorage.setItem('tokens', JSON.stringify({ token: 't', refreshToken: 'r' }))
+  })
+
+  it('al iniciar sesión carga el carrito desde GET /api/v1/cart', async () => {
+    backendSimulado({
+      'GET /users/me': () => respuesta(200, { nombre: 'Ana', correo: 'ana@correo.cl', rol: 'CLIENTE' }),
+      'GET /api/v1/cart': () => respuesta(200, CARRITO_SERVIDOR),
+    })
+    renderConSesion()
+    expect(await screen.findByText('Crema de Maní x2')).toBeTruthy()
+    expect(screen.getByTestId('total').textContent).toBe('13980')
+  })
+
+  it('sube al backend el carrito que tenía como invitado', async () => {
+    localStorage.setItem('cart', JSON.stringify([{ ...PRODUCTO, cantidad: 3 }]))
+    const spy = backendSimulado({
+      'GET /users/me': () => respuesta(200, { nombre: 'Ana', correo: 'ana@correo.cl', rol: 'CLIENTE' }),
+      'POST /api/v1/cart/items': () => respuesta(201, CARRITO_SERVIDOR),
+      'GET /api/v1/cart': () => respuesta(200, CARRITO_SERVIDOR),
+    })
+    renderConSesion()
+    await screen.findByText('Crema de Maní x2')
+    const post = spy.calls.all().find((c) => c.args[1].method === 'POST')
+    expect(JSON.parse(post.args[1].body)).toEqual({ productoId: 1, cantidad: 3 })
+    expect(JSON.parse(localStorage.getItem('cart')) || []).toEqual([]) // ya no queda carrito de invitado
+  })
+
+  it('agregar hace POST /api/v1/cart/items y usa la respuesta del backend', async () => {
+    const spy = backendSimulado({
+      'GET /users/me': () => respuesta(200, { nombre: 'Ana', correo: 'ana@correo.cl', rol: 'CLIENTE' }),
+      'GET /api/v1/cart': () => respuesta(200, { ...CARRITO_SERVIDOR, items: [] }),
+      'POST /api/v1/cart/items': () => respuesta(201, CARRITO_SERVIDOR),
+    })
+    renderConSesion()
+    await esperarPromesas()
+    await act(async () => fireEvent.click(screen.getByText('Agregar')))
+    expect(await screen.findByText('Crema de Maní x2')).toBeTruthy()
+    const post = spy.calls.all().find((c) => c.args[1].method === 'POST')
+    expect(JSON.parse(post.args[1].body)).toEqual({ productoId: 1, cantidad: 1 })
+  })
+
+  it('quitar hace DELETE /api/v1/cart/items/{id}', async () => {
+    const spy = backendSimulado({
+      'GET /users/me': () => respuesta(200, { nombre: 'Ana', correo: 'ana@correo.cl', rol: 'CLIENTE' }),
+      'GET /api/v1/cart': () => respuesta(200, CARRITO_SERVIDOR),
+      'DELETE /api/v1/cart/items/1': () => respuesta(200, { ...CARRITO_SERVIDOR, items: [] }),
+    })
+    renderConSesion()
+    await screen.findByText('Crema de Maní x2')
+    await act(async () => fireEvent.click(screen.getByText('Quitar')))
+    await esperarPromesas()
+    expect(screen.queryByText('Crema de Maní x2')).toBeNull()
+    expect(spy.calls.all().some((c) => c.args[1].method === 'DELETE')).toBeTrue()
+  })
+})

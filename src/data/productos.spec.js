@@ -1,55 +1,92 @@
-import { STORAGE_KEY, obtenerProductos, crearProducto, actualizarProducto, eliminarProducto, validarProducto } from './productos.js'
+﻿import {
+  obtenerProductos,
+  obtenerProductoPorId,
+  crearProducto,
+  actualizarProducto,
+  eliminarProducto,
+} from '../services/productosService.js'
 
-describe('productos.js', () => {
+function mockRespuesta(data, status = 200) {
+  return Promise.resolve({
+    status,
+    ok: status >= 200 && status < 300,
+    json: () => Promise.resolve(data),
+  })
+}
+
+describe('productosService.js (HTTP simulado)', () => {
   beforeEach(() => localStorage.clear())
 
-  it('obtenerProductos carga la semilla y la persiste', () => {
-    expect(obtenerProductos().length).toBe(2)
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)).length).toBe(2)
+  afterEach(() => {
+    if (window.fetch && window.fetch.and) {
+      window.fetch.and.stub()
+    }
   })
 
-  it('no muta la semilla original', () => {
-    obtenerProductos().push({ id: 99 })
-    localStorage.clear()
-    expect(obtenerProductos().length).toBe(2) // falla si se devuelve la constante
+  it('obtenerProductos consulta GET /products y devuelve la lista', async () => {
+    const lista = [{ id: 1, nombre: 'Crema de Maní', precio: 6990, categoria: 'Crema de maní', stock: 20 }]
+    spyOn(window, 'fetch').and.returnValue(mockRespuesta(lista, 200))
+
+    const res = await obtenerProductos()
+
+    // Todo pasa por el gateway (8080); GET /products es público
+    expect(window.fetch.calls.mostRecent().args[0]).toBe('http://localhost:8080/products')
+    expect(window.fetch.calls.mostRecent().args[1].method).toBe('GET')
+    expect(res.length).toBe(1)
+    expect(res[0].nombre).toBe('Crema de Maní')
   })
 
-  it('se recupera de JSON corrupto', () => {
-    localStorage.setItem(STORAGE_KEY, '{roto')
-    expect(obtenerProductos().length).toBe(2)
+  it('obtenerProductoPorId lanza error cuando la API responde 404', async () => {
+    spyOn(window, 'fetch').and.returnValue(mockRespuesta({ error: 'Producto no encontrado' }, 404))
+
+    await expectAsync(obtenerProductoPorId(999)).toBeRejectedWithError('Producto no encontrado')
   })
 
-  it('crearProducto asigna id secuencial y convierte el precio a número', () => {
-    const p = crearProducto({ nombre: ' Avena ', precio: '2000', categoria: 'Cereales' })
-    expect(p.id).toBe(3)
-    expect(p.precio).toBe(2000)
-    expect(p.nombre).toBe('Avena')
-    expect(obtenerProductos().length).toBe(3)
+  it('crearProducto envía POST con el token Bearer (sin X-User-Rol: lo pone el gateway)', async () => {
+    const nuevo = { nombre: 'Avena', precio: 2500, categoria: 'Cereales', img: '', stock: 15 }
+    localStorage.setItem('tokens', JSON.stringify({ token: 'jwt-demo', refreshToken: 'r' }))
+    spyOn(window, 'fetch').and.returnValue(mockRespuesta({ id: 3, ...nuevo }, 201))
+
+    const creado = await crearProducto(nuevo)
+
+    expect(creado.id).toBe(3)
+    expect(window.fetch).toHaveBeenCalledWith(
+      'http://localhost:8080/products',
+      jasmine.objectContaining({
+        method: 'POST',
+        headers: jasmine.objectContaining({
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer jwt-demo',
+        }),
+      })
+    )
+    // El front nunca manda el rol: así nadie puede hacerse pasar por ADMIN
+    expect(window.fetch.calls.mostRecent().args[1].headers['X-User-Rol']).toBeUndefined()
   })
 
-  it('actualizarProducto modifica sin cambiar el id', () => {
-    const a = actualizarProducto(1, { precio: '7500', id: 500 })
-    expect(a.precio).toBe(7500)
-    expect(a.id).toBe(1)
+  it('actualizarProducto envía PUT /products/{id} y rechaza si responde 403', async () => {
+    spyOn(window, 'fetch').and.returnValue(mockRespuesta({ error: 'Acceso denegado' }, 403))
+
+    await expectAsync(
+      actualizarProducto(1, { nombre: 'X', precio: 1000, categoria: 'Cat', img: '', stock: 5 })
+    ).toBeRejectedWithError('Acceso denegado')
   })
 
-  it('actualizarProducto devuelve null si no existe', () => {
-    expect(actualizarProducto(999, { precio: 1 })).toBeNull()
-  })
+  it('eliminarProducto envía DELETE /products/{id} y soporta respuesta 204', async () => {
+    spyOn(window, 'fetch').and.returnValue(
+      Promise.resolve({
+        status: 204,
+        ok: true,
+        json: () => Promise.resolve({}),
+      })
+    )
 
-  it('eliminarProducto devuelve true al borrar y false si no existe', () => {
-    expect(eliminarProducto(1)).toBeTrue()
-    expect(obtenerProductos().length).toBe(1)
-    expect(eliminarProducto(1)).toBeFalse()
-  })
+    const res = await eliminarProducto(1)
 
-  it('validarProducto detecta campos inválidos y acepta uno válido', () => {
-    expect(Object.keys(validarProducto({ nombre: '', precio: 0, categoria: ' ' })).length).toBe(3)
-    expect(validarProducto({ nombre: 'A', precio: '10', categoria: 'B' })).toEqual({})
-  })
-  
-  it('validarProducto rechaza una imagen que no sea URL http(s)', () => {
-  const e = validarProducto({ nombre: 'A', precio: 10, categoria: 'B', img: 'foto.png' })
-  expect(e.img).toBeDefined()
+    expect(res).toBeNull()
+    expect(window.fetch).toHaveBeenCalledWith(
+      'http://localhost:8080/products/1',
+      jasmine.objectContaining({ method: 'DELETE' })
+    )
   })
 })
