@@ -1,7 +1,7 @@
 const IMG_DEFAULT = 'https://mejorconsalud.as.com/wp-content/uploads/2020/09/frasco-mantequilla-cacahuete.jpg'
 const clp = (n) => Number(n).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })
 
-function ProductCard({ producto, onAgregar }) {
+function ProductCard({ producto, onAgregar, onVerDetalle }) {
   // Los productos creados desde el admin no traen imagen: se usa una por defecto
   const img = producto.img || IMG_DEFAULT
   return (
@@ -17,6 +17,16 @@ function ProductCard({ producto, onAgregar }) {
         <button className="btn btn-primary add-to-cart" onClick={() => onAgregar({ ...producto, img })}>
           Añadir al carrito
         </button>
+        {onVerDetalle && (
+          <button
+            type="button"
+            className="btn btn-secondary add-to-cart"
+            style={{ marginTop: '8px' }}
+            onClick={() => onVerDetalle(producto.id)}
+          >
+            Ver detalle
+          </button>
+        )}
       </div>
     </div>
   )

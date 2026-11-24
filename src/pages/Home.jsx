@@ -2,12 +2,13 @@
 import { useCart } from '../context/CartContext.jsx'
 import { useEffect, useState } from 'react'
 import ProductCard from '../components/ProductCard.jsx'
-import { obtenerProductos } from '../services/productosService.js'
-import { Alert } from 'react-bootstrap'
+import { obtenerProductos, obtenerProductoPorId } from '../services/productosService.js'
+import { Alert, Modal, Button } from 'react-bootstrap'
 import Notificacion from '../components/Notificaciones.jsx'
 
 const IMG_MANI = 'https://mejorconsalud.as.com/wp-content/uploads/2020/09/frasco-mantequilla-cacahuete.jpg'
 const IMG_CACAO = 'https://blog.pizcadesabor.com/wp-content/uploads/2013/12/Crema-5.jpg'
+const clp = (n) => Number(n || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })
 
 function Home() {
   const { agregar } = useCart()
@@ -16,6 +17,12 @@ function Home() {
   const [errorCatalogo, setErrorCatalogo] = useState('')
   const [enviado, setEnviado] = useState(false)
   const [aviso, setAviso] = useState('')
+
+  // Estado del modal de detalle (GET /products/{id})
+  const [modalAbierto, setModalAbierto] = useState(false)
+  const [cargandoDetalle, setCargandoDetalle] = useState(false)
+  const [errorDetalle, setErrorDetalle] = useState('')
+  const [detalle, setDetalle] = useState(null)
 
   useEffect(() => {
     let activo = true
@@ -42,6 +49,27 @@ function Home() {
       activo = false
     }
   }, [])
+
+  const abrirDetalle = async (id) => {
+    setModalAbierto(true)
+    setCargandoDetalle(true)
+    setErrorDetalle('')
+    setDetalle(null)
+    try {
+      const data = await obtenerProductoPorId(id)
+      setDetalle(data)
+    } catch (err) {
+      setErrorDetalle(err.message || 'No se pudo cargar el detalle del producto')
+    } finally {
+      setCargandoDetalle(false)
+    }
+  }
+
+  const cerrarDetalle = () => {
+    setModalAbierto(false)
+    setDetalle(null)
+    setErrorDetalle('')
+  }
 
   // Agrega al carrito y muestra la notificación
   const agregarAlCarrito = (producto) => {
@@ -115,7 +143,12 @@ function Home() {
         {!cargando && !errorCatalogo && (
           <div className="products-grid">
             {productos.map((p) => (
-              <ProductCard key={p.id} producto={p} onAgregar={agregarAlCarrito} />
+              <ProductCard
+                key={p.id}
+                producto={p}
+                onAgregar={agregarAlCarrito}
+                onVerDetalle={abrirDetalle}
+              />
             ))}
 
             <div className="product-card" style={{ opacity: 0.85 }}>
@@ -152,6 +185,46 @@ function Home() {
           </form>
         </div>
       </section>
+
+      {/* Modal de detalle del producto */}
+      <Modal show={modalAbierto} onHide={cerrarDetalle} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>{detalle?.nombre || 'Detalle del producto'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {cargandoDetalle && <p>Cargando detalle...</p>}
+          {errorDetalle && <Alert variant="danger">{errorDetalle}</Alert>}
+          {!cargandoDetalle && !errorDetalle && detalle && (
+            <div>
+              <img
+                src={detalle.img || IMG_MANI}
+                alt={detalle.nombre}
+                style={{ width: '100%', maxHeight: '240px', objectFit: 'cover', borderRadius: '8px', marginBottom: '12px' }}
+              />
+              <p className="mb-1"><strong>Categoría:</strong> {detalle.categoria}</p>
+              <p className="mb-1"><strong>Precio:</strong> {clp(detalle.precio)}</p>
+              <p className="mb-1"><strong>Stock disponible:</strong> {detalle.stock ?? 0} unidades</p>
+              <p className="mb-0 text-muted"><small>Código de producto: #{detalle.id}</small></p>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={cerrarDetalle}>Cerrar</Button>
+          {detalle && (
+            <Button
+              variant="primary"
+              disabled={(detalle.stock ?? 0) <= 0}
+              onClick={() => {
+                agregarAlCarrito({ ...detalle, img: detalle.img || IMG_MANI })
+                cerrarDetalle()
+              }}
+            >
+              {(detalle.stock ?? 0) <= 0 ? 'Sin stock' : 'Añadir al carrito'}
+            </Button>
+          )}
+        </Modal.Footer>
+      </Modal>
+
       <Notificacion mensaje={aviso} onClose={() => setAviso('')} />
     </main>
   )
