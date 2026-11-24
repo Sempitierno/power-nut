@@ -1,46 +1,49 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { api, leerTokens, guardarTokens, borrarTokens } from '../services/api.js'
 
 const AuthContext = createContext()
 
-// Usuario administrador que se crea la primera vez
-const ADMIN = { nombre: 'Admin', correo: 'admin@powernut.cl', password: 'Admin123!', rol: 'admin' }
-
-function obtenerUsuarios() {
-  const usuarios = JSON.parse(localStorage.getItem('usuarios'))
-  if (usuarios) return usuarios
-  localStorage.setItem('usuarios', JSON.stringify([ADMIN]))
-  return [ADMIN]
-}
+// El backend manda "ADMIN"/"CLIENTE"; el resto del front ya compara con 'admin'
+const aSesion = (u) => ({ nombre: u.nombre, correo: u.correo, rol: u.rol.toLowerCase() })
 
 export function AuthProvider({ children }) {
-  // Usuario conectado (se guarda en localStorage con la clave "sesion")
-  const [usuario, setUsuario] = useState(() => JSON.parse(localStorage.getItem('sesion')))
+  const [usuario, setUsuario] = useState(null)
+  // Solo hay algo que revisar si quedaron tokens guardados
+  const [cargando, setCargando] = useState(() => leerTokens() !== null)
 
-  // Devuelve el usuario si los datos son correctos, o null si no
-  const login = (correo, password) => {
-    const encontrado = obtenerUsuarios().find((u) => u.correo === correo && u.password === password)
-    if (!encontrado) return null
-    const sesion = { nombre: encontrado.nombre, correo: encontrado.correo, rol: encontrado.rol }
-    localStorage.setItem('sesion', JSON.stringify(sesion))
+  // Al recargar la página: si hay tokens, se le pregunta al backend quién soy
+  useEffect(() => {
+    if (!leerTokens()) return
+    api('/users/me')
+      .then((u) => setUsuario(aSesion(u)))
+      .catch(() => borrarTokens())
+      .finally(() => setCargando(false))
+  }, [])
+
+  // Lanza Error("Correo o contraseña incorrectos") si el backend responde 401
+  const login = async (correo, password) => {
+    const data = await api('/auth/login', { method: 'POST', body: { correo, password } })
+    guardarTokens({ token: data.token, refreshToken: data.refreshToken })
+    const sesion = aSesion(data)
     setUsuario(sesion)
     return sesion
   }
 
-  // Devuelve false si el correo ya existe
-  const registrar = (nuevo) => {
-    const usuarios = obtenerUsuarios()
-    if (usuarios.some((u) => u.correo === nuevo.correo)) return false
-    localStorage.setItem('usuarios', JSON.stringify([...usuarios, { ...nuevo, rol: 'cliente' }]))
-    return true
-  }
+  // Lanza Error("Ese correo ya está registrado") si el backend responde 409
+  const registrar = (nuevo) => api('/auth/register', { method: 'POST', body: nuevo })
 
   const logout = () => {
-    localStorage.removeItem('sesion')
+    const t = leerTokens()
+    borrarTokens()
     setUsuario(null)
+    // Se revoca el refresh token en el servidor
+    if (t?.refreshToken) {
+      api('/auth/logout', { method: 'POST', body: { refreshToken: t.refreshToken } }).catch(() => {})
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ usuario, login, registrar, logout }}>
+    <AuthContext.Provider value={{ usuario, cargando, login, registrar, logout }}>
       {children}
     </AuthContext.Provider>
   )

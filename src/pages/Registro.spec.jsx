@@ -1,6 +1,7 @@
 import { screen, fireEvent, act } from '@testing-library/react'
 import { Routes, Route } from 'react-router-dom'
 import { renderConProviders } from '../test/renderConProviders.jsx'
+import { respuesta, esperarPromesas } from '../test/mockFetch.js'
 import Registro from './Registro.jsx'
 
 // Escribe en un input por su placeholder (único en el formulario)
@@ -69,16 +70,32 @@ describe('Registro', () => {
     expect(screen.queryByRole('status')).toBeNull()
   })
 
-  it('registra con datos válidos, muestra la notificación y redirige al login', () => {
+  it('registra con datos válidos, muestra la notificación y redirige al login', async () => {
+    spyOn(window, 'fetch').and.returnValue(respuesta(201, { id: 1, nombre: 'Ana Pérez', correo: 'ana@correo.cl', rol: 'CLIENTE' }))
     dibujarRegistro()
     llenarFormulario()
     fireEvent.click(screen.getByText('Registrarse'))
+    await esperarPromesas()
+    // Se envió POST /auth/register con los datos del formulario (sin rol: lo decide el backend)
+    const [url, opciones] = window.fetch.calls.mostRecent().args
+    expect(url).toContain('/auth/register')
+    expect(JSON.parse(opciones.body)).toEqual({
+      nombre: 'Ana Pérez', correo: 'ana@correo.cl', password: 'Abc12345!', region: 'RM', comuna: 'Providencia',
+    })
     // Aparece la notificación de éxito (role="status")
     expect(screen.getByRole('status').textContent).toContain('Te has registrado con éxito')
-    // El usuario quedó guardado en localStorage
-    expect(JSON.parse(localStorage.getItem('usuarios')).some((u) => u.correo === 'ana@correo.cl')).toBeTrue()
     // Pasados los 2,5 s del setTimeout se redirige al login
     act(() => { jasmine.clock().tick(2500) })
     expect(screen.getByText('Página de login')).toBeTruthy()
+  })
+
+  it('muestra el error del backend si el correo ya existe (409)', async () => {
+    spyOn(window, 'fetch').and.returnValue(respuesta(409, { error: 'Ese correo ya está registrado' }))
+    dibujarRegistro()
+    llenarFormulario()
+    fireEvent.click(screen.getByText('Registrarse'))
+    await esperarPromesas()
+    expect(screen.getByText('Ese correo ya está registrado')).toBeTruthy()
+    expect(screen.queryByRole('status')).toBeNull()
   })
 })
