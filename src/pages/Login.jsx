@@ -9,19 +9,20 @@ function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  const enviar = (e) => {
+  const enviar = async (e) => {
     e.preventDefault()
     if (!correo || !password) {
       setError('Completa correo y contraseña')
       return
     }
-    const usuario = login(correo, password)
-    if (!usuario) {
-      setError('Correo o contraseña incorrectos')
-      return
+    try {
+      const usuario = await login(correo, password)
+      // El admin va al CRUD; el cliente al inicio
+      navigate(usuario.rol === 'admin' ? '/admin/productos' : '/')
+    } catch (err) {
+      // Mensaje del backend, ej: "Correo o contraseña incorrectos"
+      setError(err.message)
     }
-    // El admin va al CRUD; el cliente al inicio
-    navigate(usuario.rol === 'admin' ? '/admin/productos' : '/')
   }
 
   return (

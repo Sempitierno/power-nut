@@ -37,15 +37,23 @@ function Registro() {
     else setDatos({ ...datos, [id]: value })
   }
 
-  const enviar = (e) => {
+  const enviar = async (e) => {
     e.preventDefault()
     const encontrados = validar(datos)
     setErrores(encontrados)
     if (Object.keys(encontrados).length > 0) return
 
-    const ok = registrar({ nombre: datos.nombre.trim(), correo: datos.correo, password: datos.password, region: datos.region, comuna: datos.comuna })
-    if (!ok) {
-      setErrores({ correo: 'Ese correo ya está registrado' })
+    try {
+      await registrar({
+        nombre: datos.nombre.trim(),
+        correo: datos.correo,
+        password: datos.password,
+        region: datos.region,
+        comuna: datos.comuna,
+      })
+    } catch (err) {
+      // Ej: "Ese correo ya está registrado" (409 del backend)
+      setErrores({ correo: err.message })
       return
     }
     setExito(true)
