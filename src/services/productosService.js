@@ -1,60 +1,15 @@
-﻿const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8082';
+// Catálogo de productos contra el backend, siempre a través del gateway (api.js).
+// api.js agrega "Authorization: Bearer <token>" y renueva el token si venció.
+// El rol NO se manda desde el front: el gateway lo saca del JWT y agrega X-User-Rol.
+import { api } from './api.js'
 
-function construirHeaders(usuario) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (usuario?.token) {
-    headers['Authorization'] = `Bearer ${usuario.token}`;
-  }
-  if (usuario?.rol) {
-    headers['X-User-Rol'] = String(usuario.rol).toUpperCase();
-  }
-  return headers;
-}
+export const obtenerProductos = (categoria = '') =>
+  api(categoria ? `/products/category/${encodeURIComponent(categoria)}` : '/products')
 
-async function manejarRespuesta(res) {
-  if (res.status === 204) return null;
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(data.error || `Error HTTP ${res.status}`);
-  }
-  return data;
-}
+export const obtenerProductoPorId = (id) => api(`/products/${id}`)
 
-export async function obtenerProductos(categoria = '') {
-  const url = categoria
-    ? `${API_URL}/products/category/${encodeURIComponent(categoria)}`
-    : `${API_URL}/products`;
-  const res = await fetch(url);
-  return manejarRespuesta(res);
-}
+export const crearProducto = (producto) => api('/products', { method: 'POST', body: producto })
 
-export async function obtenerProductoPorId(id) {
-  const res = await fetch(`${API_URL}/products/${id}`);
-  return manejarRespuesta(res);
-}
+export const actualizarProducto = (id, producto) => api(`/products/${id}`, { method: 'PUT', body: producto })
 
-export async function crearProducto(producto, usuario) {
-  const res = await fetch(`${API_URL}/products`, {
-    method: 'POST',
-    headers: construirHeaders(usuario),
-    body: JSON.stringify(producto),
-  });
-  return manejarRespuesta(res);
-}
-
-export async function actualizarProducto(id, producto, usuario) {
-  const res = await fetch(`${API_URL}/products/${id}`, {
-    method: 'PUT',
-    headers: construirHeaders(usuario),
-    body: JSON.stringify(producto),
-  });
-  return manejarRespuesta(res);
-}
-
-export async function eliminarProducto(id, usuario) {
-  const res = await fetch(`${API_URL}/products/${id}`, {
-    method: 'DELETE',
-    headers: construirHeaders(usuario),
-  });
-  return manejarRespuesta(res);
-}
+export const eliminarProducto = (id) => api(`/products/${id}`, { method: 'DELETE' })

@@ -71,10 +71,16 @@ function Home() {
     setErrorDetalle('')
   }
 
-  // Agrega al carrito y muestra la notificación
-  const agregarAlCarrito = (producto) => {
-    agregar(producto)
-    setAviso(`${producto.nombre} se agregó al carrito`)
+  // Agrega al carrito (con sesión va al backend, que valida el stock) y muestra la notificación
+  const [errorCarrito, setErrorCarrito] = useState('')
+  const agregarAlCarrito = async (producto) => {
+    try {
+      await agregar(producto)
+      setErrorCarrito('')
+      setAviso(`${producto.nombre} se agregó al carrito`)
+    } catch (err) {
+      setErrorCarrito(err.message) // ej: "Stock insuficiente para ..."
+    }
   }
 
   const enviarContacto = (e) => {
@@ -134,6 +140,11 @@ function Home() {
 
         {cargando && <p style={{ textAlign: 'center' }}>Cargando catálogo de productos...</p>}
 
+        {errorCarrito && (
+          <Alert variant="warning" dismissible onClose={() => setErrorCarrito('')}>
+            {errorCarrito}
+          </Alert>
+        )}
         {errorCatalogo && (
           <Alert variant="danger" role="alert">
             Error al cargar el catálogo: {errorCatalogo}

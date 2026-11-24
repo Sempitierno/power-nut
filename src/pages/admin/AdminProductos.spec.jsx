@@ -16,11 +16,8 @@ function respuestaJson(body, status = 200) {
 }
 
 function renderAdmin() {
-  return render(
-    <AuthProvider>
-      <AdminProductos />
-    </AuthProvider>
-  )
+  // El acceso por rol ya lo controla RutaProtegida; aquí se prueba solo el CRUD
+  return render(<AdminProductos />)
 }
 
 const escribir = (label, value) =>
@@ -29,10 +26,8 @@ const escribir = (label, value) =>
 describe('AdminProductos (HTTP simulado)', () => {
   beforeEach(() => {
     localStorage.clear()
-    localStorage.setItem(
-      'sesion',
-      JSON.stringify({ nombre: 'Admin', correo: 'admin@powernut.cl', rol: 'admin', token: 'token-test' })
-    )
+    // Sesión de admin: solo el token; el rol lo resuelve el backend
+    localStorage.setItem('tokens', JSON.stringify({ token: 'token-test', refreshToken: 'r' }))
   })
 
   it('lista los productos obtenidos desde la API', async () => {
@@ -41,7 +36,7 @@ describe('AdminProductos (HTTP simulado)', () => {
     renderAdmin()
 
     expect(await screen.findByText('Crema de Maní Natural — 500 g')).toBeTruthy()
-    expect(window.fetch).toHaveBeenCalledWith('http://localhost:8082/products')
+    expect(window.fetch).toHaveBeenCalledWith('http://localhost:8080/products', jasmine.objectContaining({ method: 'GET' }))
   })
 
   it('muestra errores de validación si se envía vacío y no llama a POST', async () => {
@@ -79,7 +74,7 @@ describe('AdminProductos (HTTP simulado)', () => {
 
     expect(await screen.findByText('Avena')).toBeTruthy()
     expect(fetchSpy).toHaveBeenCalledWith(
-      'http://localhost:8082/products',
+      'http://localhost:8080/products',
       jasmine.objectContaining({ method: 'POST' })
     )
   })
@@ -107,7 +102,7 @@ describe('AdminProductos (HTTP simulado)', () => {
     expect(screen.queryByRole('cell', { name: 'Crema de Maní Natural — 500 g' })).toBeNull()
     
     expect(fetchSpy).toHaveBeenCalledWith(
-      'http://localhost:8082/products/1',
+      'http://localhost:8080/products/1',
       jasmine.objectContaining({ method: 'DELETE' })
     )
   })

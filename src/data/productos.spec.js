@@ -15,6 +15,8 @@ function mockRespuesta(data, status = 200) {
 }
 
 describe('productosService.js (HTTP simulado)', () => {
+  beforeEach(() => localStorage.clear())
+
   afterEach(() => {
     if (window.fetch && window.fetch.and) {
       window.fetch.and.stub()
@@ -27,7 +29,9 @@ describe('productosService.js (HTTP simulado)', () => {
 
     const res = await obtenerProductos()
 
-    expect(window.fetch).toHaveBeenCalledWith('http://localhost:8082/products')
+    // Todo pasa por el gateway (8080); GET /products es público
+    expect(window.fetch.calls.mostRecent().args[0]).toBe('http://localhost:8080/products')
+    expect(window.fetch.calls.mostRecent().args[1].method).toBe('GET')
     expect(res.length).toBe(1)
     expect(res[0].nombre).toBe('Crema de Maní')
   })
@@ -38,31 +42,33 @@ describe('productosService.js (HTTP simulado)', () => {
     await expectAsync(obtenerProductoPorId(999)).toBeRejectedWithError('Producto no encontrado')
   })
 
-  it('crearProducto envía POST con X-User-Rol ADMIN y devuelve el producto creado', async () => {
+  it('crearProducto envía POST con el token Bearer (sin X-User-Rol: lo pone el gateway)', async () => {
     const nuevo = { nombre: 'Avena', precio: 2500, categoria: 'Cereales', img: '', stock: 15 }
+    localStorage.setItem('tokens', JSON.stringify({ token: 'jwt-demo', refreshToken: 'r' }))
     spyOn(window, 'fetch').and.returnValue(mockRespuesta({ id: 3, ...nuevo }, 201))
 
-    const creado = await crearProducto(nuevo, { rol: 'ADMIN', token: 'jwt-demo' })
+    const creado = await crearProducto(nuevo)
 
     expect(creado.id).toBe(3)
     expect(window.fetch).toHaveBeenCalledWith(
-      'http://localhost:8082/products',
+      'http://localhost:8080/products',
       jasmine.objectContaining({
         method: 'POST',
         headers: jasmine.objectContaining({
           'Content-Type': 'application/json',
-          'X-User-Rol': 'ADMIN',
           Authorization: 'Bearer jwt-demo',
         }),
       })
     )
+    // El front nunca manda el rol: así nadie puede hacerse pasar por ADMIN
+    expect(window.fetch.calls.mostRecent().args[1].headers['X-User-Rol']).toBeUndefined()
   })
 
   it('actualizarProducto envía PUT /products/{id} y rechaza si responde 403', async () => {
     spyOn(window, 'fetch').and.returnValue(mockRespuesta({ error: 'Acceso denegado' }, 403))
 
     await expectAsync(
-      actualizarProducto(1, { nombre: 'X', precio: 1000, categoria: 'Cat', img: '', stock: 5 }, { rol: 'CLIENTE' })
+      actualizarProducto(1, { nombre: 'X', precio: 1000, categoria: 'Cat', img: '', stock: 5 })
     ).toBeRejectedWithError('Acceso denegado')
   })
 
@@ -75,11 +81,11 @@ describe('productosService.js (HTTP simulado)', () => {
       })
     )
 
-    const res = await eliminarProducto(1, { rol: 'ADMIN' })
+    const res = await eliminarProducto(1)
 
     expect(res).toBeNull()
     expect(window.fetch).toHaveBeenCalledWith(
-      'http://localhost:8082/products/1',
+      'http://localhost:8080/products/1',
       jasmine.objectContaining({ method: 'DELETE' })
     )
   })

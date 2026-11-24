@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 import { Table, Form, Button, Modal, Alert } from 'react-bootstrap'
 import Notificacion from '../../components/Notificaciones.jsx'
-import { useAuth } from '../../context/AuthContext.jsx'
 import {
   obtenerProductos,
   crearProducto,
@@ -32,7 +31,6 @@ function validarFormulario(datos) {
 }
 
 function AdminProductos() {
-  const { usuario } = useAuth()
   const [productos, setProductos] = useState([])
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
@@ -43,12 +41,12 @@ function AdminProductos() {
   const [aEliminar, setAEliminar] = useState(null)
   const [aviso, setAviso] = useState('')
 
+  // GET /products: recarga la tabla después de crear, editar o eliminar
   const refrescar = async () => {
-    setCargando(true)
-    setErrorApi('')
     try {
       const lista = await obtenerProductos()
       setProductos(Array.isArray(lista) ? lista : [])
+      setErrorApi('')
     } catch (err) {
       setErrorApi(err.message || 'No se pudieron cargar los productos')
     } finally {
@@ -56,8 +54,12 @@ function AdminProductos() {
     }
   }
 
+  // Carga inicial: el setState ocurre en el .then (cuando responde el backend)
   useEffect(() => {
-    refrescar()
+    obtenerProductos()
+      .then((lista) => setProductos(Array.isArray(lista) ? lista : []))
+      .catch((err) => setErrorApi(err.message || 'No se pudieron cargar los productos'))
+      .finally(() => setCargando(false))
   }, [])
 
   const limpiar = () => {
@@ -88,10 +90,10 @@ function AdminProductos() {
     setGuardando(true)
     try {
       if (editandoId === null) {
-        await crearProducto(payload, usuario)
+        await crearProducto(payload)
         setAviso(`"${payload.nombre}" fue creado`)
       } else {
-        await actualizarProducto(editandoId, payload, usuario)
+        await actualizarProducto(editandoId, payload)
         setAviso(`"${payload.nombre}" fue actualizado`)
       }
       await refrescar()
@@ -121,7 +123,7 @@ function AdminProductos() {
     setGuardando(true)
     setErrorApi('')
     try {
-      await eliminarProducto(aEliminar.id, usuario)
+      await eliminarProducto(aEliminar.id)
       if (aEliminar.id === editandoId) limpiar()
       await refrescar()
       setAviso(`"${aEliminar.nombre}" fue eliminado`)
